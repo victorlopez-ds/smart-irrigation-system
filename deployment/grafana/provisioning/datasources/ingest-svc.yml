@@ -1,0 +1,13 @@
+apiVersion: 1
+
+datasources:
+  - name: Irridea (ingest-svc)
+    type: yesoreyeram-infinity-datasource
+    access: proxy
+    url: http://ingest-svc:8000
+    isDefault: true
+    jsonData:
+      global_queries: []
+      allowedHosts:
+        - http://ingest-svc:8000
+    editable: true

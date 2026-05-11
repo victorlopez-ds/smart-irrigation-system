@@ -1,0 +1,208 @@
+{
+  "main": {
+    "id": "a082f34478808eef",
+    "type": "split",
+    "children": [
+      {
+        "id": "2e2581e0e9e73ec3",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "065551e76fc03a21",
+            "type": "leaf",
+            "state": {
+              "type": "graph",
+              "state": {},
+              "icon": "lucide-git-fork",
+              "title": "Graph view"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "b8fbf2337e924382",
+    "type": "split",
+    "children": [
+      {
+        "id": "fcbe9869efc8b2aa",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "c2b642b594cbb271",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "511b6f468e728b37",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "091336dc3bbb7f6d",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "d179aa871c581e3e",
+    "type": "split",
+    "children": [
+      {
+        "id": "683d74448519de8c",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "580e7e9cfe4f1940",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks"
+            }
+          },
+          {
+            "id": "6c2d8a4c8e4cd1ab",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links"
+            }
+          },
+          {
+            "id": "31906c690229eb03",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "c9a86a4de23484da",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "7d401318df77e725",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "065551e76fc03a21",
+  "lastOpenFiles": [
+    "models.md",
+    "model-distributor.md",
+    "nginx-central.md",
+    "irridea-rl-finetune.md",
+    "irridea-train-moisture.md",
+    "irridea-train-anomaly.md",
+    "AEMET API.md",
+    "mlflow-artifacts.md",
+    "postgres.md",
+    "mlflow.md",
+    "airflow-sched.md",
+    "airflow-web.md",
+    "Parquet.md",
+    "DuckDB.md",
+    "ingest-svc.md",
+    "anomaly-api.md",
+    "6 — Inferencia en el Edge.md",
+    "3 — Ingesta y Almacenamiento.md",
+    "2 — Transmisión.md",
+    "1 — Captura de datos.md",
+    "Central (Servidor).md",
+    "Edge (Raspberry Pi).md",
+    "Campo (Field).md",
+    "moisture-api.md",
+    "models-edge.md",
+    "sensors.md"
+  ]
+}

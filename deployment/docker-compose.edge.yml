@@ -1,0 +1,131 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# docker-compose.edge.yml — Nodo edge (Raspberry Pi simulada con Docker)
+#
+# Servicios:
+#   - anomaly-api    : detector de anomalías (consume MQTT, publica /alerts)
+#   - rl-api         : agente RL de riego
+#   - sync-agent     : descarga modelos vía nginx-central + bearer, llama /reload
+#   - edge-cron      : sidecar cron del edge
+#
+# Dependencias externas (resueltas por DNS dentro de irridea-net):
+#   - mosquitto         (broker, auth con MQTT_USER/MQTT_PASS)
+#   - nginx-central     (descarga de modelos, requiere bearer SYNC_TOKEN)
+#
+# Volúmenes:
+#   - models-edge       : volumen LOCAL del edge, poblado por sync-agent.
+#                         NO comparte con el de central — el edge es independiente.
+#
+# Uso:
+#   docker compose -f docker-compose.edge.yml up -d
+# ──────────────────────────────────────────────────────────────────────────────
+
+version: "3.9"
+
+services:
+
+  # ── Cliente MQTT del edge ──────────────────────────────────────────────────
+  edge-mqtt-client:
+    build:
+      context: ..
+      dockerfile: services/edge_mqtt_client/Dockerfile
+    container_name: edge-mqtt-client
+    env_file: ../deployment/.env
+    environment:
+      MQTT_BROKER_HOST: mosquitto
+      MQTT_BROKER_PORT: 1883
+      MQTT_USER: ${MQTT_USER}
+      MQTT_PASS: ${MQTT_PASS}
+      MQTT_TOPIC_FLOW:  ${MQTT_TOPIC_FLOW:-irridea/flow}
+      MQTT_TOPIC_SOIL:  ${MQTT_TOPIC_SOIL:-irridea/soil}
+      MQTT_TOPIC_VALVE: ${MQTT_TOPIC_VALVE:-irridea/valve}
+      ANOMALY_API_URL:  http://anomaly-api:8001
+      INGEST_URL:       http://ingest-svc:8000
+      ANOMALY_WINDOW:   ${ANOMALY_WINDOW:-30}
+    ports:
+      - "8010:8010"
+    depends_on:
+      - anomaly-api
+    restart: unless-stopped
+    networks: [irridea]
+
+  # ── API de inferencia: detector de anomalías ────────────────────────────────
+  anomaly-api:
+    build:
+      context: ..
+      dockerfile: services/anomaly_api/Dockerfile
+    container_name: anomaly-api
+    user: "50000:0"
+    env_file: ../deployment/.env
+    environment:
+      INGEST_URL: http://ingest-svc:8000
+      MODEL_PATH:  /app/models/anomaly_cnn_lstm.onnx
+      SCALER_PATH: /app/models/anomaly_scaler.pkl
+      ANOMALY_WINDOW: ${ANOMALY_WINDOW:-30}
+      ANOMALY_THRESH: ${ANOMALY_THRESH:-0.25}
+      MQTT_BROKER_HOST: mosquitto
+      MQTT_BROKER_PORT: 1883
+      MQTT_USER: ${MQTT_USER}
+      MQTT_PASS: ${MQTT_PASS}
+      MQTT_TOPIC_ALERTS: ${MQTT_TOPIC_ALERTS:-irridea/alerts}
+    ports:
+      - "8001:8001"
+    volumes:
+      - models-edge:/app/models:ro
+    restart: unless-stopped
+    networks: [irridea]
+
+  # ── API de inferencia: agente TQC ───────────────────────────────────────────
+  rl-api:
+    build:
+      context: ..
+      dockerfile: services/rl_api/Dockerfile
+    container_name: rl-api
+    user: "50000:0"
+    env_file: ../deployment/.env
+    environment:
+      MODEL_PATH: /app/models/rl_actor.onnx
+      TAU_MAX:    "180.0"
+      Q_LH:       "12.57"
+      INGEST_URL: http://ingest-svc:8000
+      DEVICE_ID:  ${DEVICE_ID:-edge-default}
+    ports:
+      - "8003:8003"
+    volumes:
+      - models-edge:/app/models:ro
+    restart: unless-stopped
+    networks: [irridea]
+
+  # ── Sync-agent: descarga modelos del central cada hora ──────────────────────
+  sync-agent:
+    build:
+      context: ..
+      dockerfile: services/sync_agent/Dockerfile
+    container_name: sync-agent
+    environment:
+      CENTRAL_URL:  http://nginx-central:8080
+      SYNC_TOKEN:   ${SYNC_TOKEN}
+      MODELS_DIR:   /app/models
+      HTTP_TIMEOUT: "30"
+    volumes:
+      - models-edge:/app/models     # ESCRITURA: este es el productor del volumen
+    restart: unless-stopped
+    networks: [irridea]
+
+  # ── Cron sidecar del edge ───────────────────────────────────────────────────
+  edge-cron:
+    build:
+      context: ..
+      dockerfile: services/edge_cron/Dockerfile
+    container_name: edge-cron
+    depends_on:
+      - anomaly-api
+    restart: unless-stopped
+    networks: [irridea]
+
+volumes:
+  models-edge:
+
+networks:
+  irridea:
+    name: irridea-net
+    external: true

@@ -1,0 +1,41 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# nginx central — Proxy con auth bearer delante de model-distributor.
+#
+# Sustitución de variables: la imagen oficial nginx procesa los .template en
+# /etc/nginx/templates/ con `envsubst`. Aquí solo necesitamos $SYNC_TOKEN.
+# Resto de variables nginx se escapan con ${DOLLAR} → ver entrypoint estándar.
+# ──────────────────────────────────────────────────────────────────────────────
+
+map_hash_bucket_size 128;
+
+map $http_authorization $auth_ok {
+    default                       0;
+    "Bearer ${SYNC_TOKEN}"        1;
+}
+
+server {
+    listen       8080;
+    server_name  _;
+
+    # Health del propio nginx (sin auth, útil para debug local)
+    location = /nginx-health {
+        return 200 "nginx ok\n";
+    }
+
+    # /manifest y /artifacts/* requieren bearer
+    location ~ ^/(manifest|artifacts/) {
+        if ($auth_ok = 0) {
+            add_header WWW-Authenticate "Bearer" always;
+            return 401;
+        }
+        proxy_pass         http://model-distributor:8004;
+        proxy_set_header   Host $host;
+        proxy_read_timeout 60s;
+        proxy_buffering    off;
+    }
+
+    # Cualquier otra ruta → 404 (no exponemos /health del distributor)
+    location / {
+        return 404;
+    }
+}

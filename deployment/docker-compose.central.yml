@@ -1,0 +1,254 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# docker-compose.central.yml — Servidor central (GPU, Airflow, MLflow, broker)
+#
+# Servicios:
+#   - postgres            : backend de Airflow y MLflow
+#   - mlflow              : registro de experimentos y modelo registry
+#   - airflow-init/-web/-sched
+#   - ingest-svc          : MQTT → DuckDB (sigue en central, fuente de verdad)
+#   - moisture-api        : inspección del predictor (no se sincroniza al edge)
+#   - model-distributor   : sirve .onnx/.pkl al edge (interno, sin auth)
+#   - nginx-central       : proxy con bearer token, expone /manifest y /artifacts
+#   - mosquitto           : broker MQTT con auth (single user "irridea")
+#
+# Red: usa `irridea-net` como red externa compartida con el edge compose.
+# Crear una sola vez:
+#   docker network create irridea-net
+#
+# Uso:
+#   docker compose -f docker-compose.central.yml up -d
+# ──────────────────────────────────────────────────────────────────────────────
+
+version: "3.9"
+
+x-airflow-common: &airflow-common
+  build:
+    context: ..
+    dockerfile: deployment/docker/airflow.Dockerfile
+  image: irridea-airflow:2.9.3
+  env_file: ../deployment/.env
+  environment:
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:${POSTGRES_PASSWORD}@postgres/airflow
+    AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY}
+    AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW_SECRET_KEY}
+    AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+    MLFLOW_TRACKING_URI: http://mlflow:5000
+    DATA_DIR: /opt/airflow/project/data/stream
+    HOST_PROJECT_DIR: ${HOST_PROJECT_DIR}
+    # Airflow notifica /reload al servicio interno; el edge se actualiza vía sync-agent
+    ANOMALY_API_URL: http://anomaly-api:8001
+    MOISTURE_API_URL: http://moisture-api:8002
+    RL_API_URL: http://rl-api:8003
+  volumes:
+    - ../pipelines/airflow/dags:/opt/airflow/dags
+    - ../pipelines/airflow/plugins:/opt/airflow/plugins
+    - ..:/opt/airflow/project
+    - airflow-logs:/opt/airflow/logs
+    - ../data:/opt/airflow/project/data
+    - ../models:/opt/airflow/project/models
+    - /var/run/docker.sock:/var/run/docker.sock
+    - mlflow-artifacts:/mlflow-artifacts
+  depends_on:
+    postgres:
+      condition: service_healthy
+  networks: [irridea]
+
+services:
+
+  # ── PostgreSQL ──────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: airflow
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 10s
+      retries: 5
+    restart: unless-stopped
+    networks: [irridea]
+
+  # ── MLflow ─────────────────────────────────────────────────────────────────
+  mlflow:
+    build:
+      context: ..
+      dockerfile: deployment/docker/mlflow.Dockerfile
+    command: >
+      mlflow server
+        --backend-store-uri postgresql+psycopg2://airflow:${POSTGRES_PASSWORD}@postgres/mlflow
+        --default-artifact-root /mlflow-artifacts
+        --host 0.0.0.0
+        --port 5000
+    ports:
+      - "5000:5000"
+    volumes:
+      - mlflow-artifacts:/mlflow-artifacts
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks: [irridea]
+
+  # ── Airflow init ────────────────────────────────────────────────────────────
+  airflow-init:
+    <<: *airflow-common
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        airflow db migrate
+        airflow users create \
+          --username admin \
+          --password ${AIRFLOW_ADMIN_PASSWORD} \
+          --firstname Admin \
+          --lastname Irridea \
+          --role Admin \
+          --email admin@irridea.local
+    restart: "no"
+
+  airflow-web:
+    <<: *airflow-common
+    command: webserver
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 30s
+      retries: 5
+    restart: unless-stopped
+
+  airflow-sched:
+    <<: *airflow-common
+    command: scheduler
+    restart: unless-stopped
+
+  # ── Ingest (MQTT → DuckDB) ─────────────────────────────────────────────────
+  ingest-svc:
+    build:
+      context: ..
+      dockerfile: services/ingest_svc/Dockerfile
+    container_name: ingest-svc
+    user: "50000:0"
+    env_file: ../deployment/.env
+    environment:
+      AEMET_API_KEY: ${AEMET_API_KEY}
+      AEMET_MUNICIPIO: ${AEMET_MUNICIPIO:-30030}
+      MQTT_BROKER_HOST: mosquitto
+      MQTT_BROKER_PORT: 1883
+      MQTT_USER: ${MQTT_USER}
+      MQTT_PASS: ${MQTT_PASS}
+      MQTT_TOPIC_FLOW:  ${MQTT_TOPIC_FLOW:-irridea/flow}
+      MQTT_TOPIC_VALVE: ${MQTT_TOPIC_VALVE:-irridea/valve}
+      MQTT_TOPIC_SOIL:  ${MQTT_TOPIC_SOIL:-irridea/soil}
+      DATA_DIR: /app/data
+      BUFFER_DAYS_RAW:   ${BUFFER_DAYS_RAW:-30}
+      BUFFER_DAYS_DAILY: ${BUFFER_DAYS_DAILY:-90}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../data/stream:/app/data
+    depends_on:
+      - mosquitto
+    restart: unless-stopped
+    networks: [irridea]
+
+  # ── Moisture API (inspección — NO se sincroniza al edge) ───────────────────
+  moisture-api:
+    build:
+      context: ..
+      dockerfile: services/moisture_api/Dockerfile
+    container_name: moisture-api
+    user: "50000:0"
+    env_file: ../deployment/.env
+    environment:
+      MODEL_PATH:    /app/models/moisture_mlp.onnx
+      SCALER_X_PATH: /app/models/moisture_scaler_x.pkl
+      SCALER_Y_PATH: /app/models/moisture_scaler_y.pkl
+    ports:
+      - "8002:8002"
+    volumes:
+      - ../models:/app/models:ro
+    restart: unless-stopped
+    networks: [irridea]
+
+  # ── Model distributor (interno, NO expuesto al exterior) ───────────────────
+  model-distributor:
+    build:
+      context: ..
+      dockerfile: services/model_distributor/Dockerfile
+    container_name: model-distributor
+    user: "50000:0"
+    environment:
+      MODELS_DIR: /app/models
+      ALLOWED_FILES: "anomaly_cnn_lstm.onnx,anomaly_scaler.pkl,rl_actor.onnx"
+    # NO publica puertos: solo accesible vía nginx-central
+    expose:
+      - "8004"
+    volumes:
+      - ../models:/app/models:ro
+    restart: unless-stopped
+    networks: [irridea]
+
+  # ── NGINX (auth bearer + proxy a model-distributor) ────────────────────────
+  nginx-central:
+    image: nginx:1.27-alpine
+    container_name: nginx-central
+    environment:
+      SYNC_TOKEN: ${SYNC_TOKEN}
+    volumes:
+      - ../deployment/nginx/central.conf.template:/etc/nginx/templates/default.conf.template:ro
+    ports:
+      - "8443:8080"     # HTTP plain en LAN; edge lo consume por aquí
+    depends_on:
+      - model-distributor
+    restart: unless-stopped
+    networks: [irridea]
+
+  # ── Grafana (monitorización IoT + ML) ────────────────────────────────────────
+  grafana:
+    image: grafana/grafana-oss:11.1.0
+    container_name: grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: irridea
+      GF_INSTALL_PLUGINS: yesoreyeram-infinity-datasource
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/irridea.json
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ../deployment/grafana/provisioning:/etc/grafana/provisioning
+      - ../deployment/grafana/dashboards:/var/lib/grafana/dashboards
+    depends_on:
+      - ingest-svc
+    restart: unless-stopped
+    networks: [irridea]
+
+  # ── Mosquitto con auth ──────────────────────────────────────────────────────
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: mosquitto
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ../deployment/mosquitto/config:/mosquitto/config
+      - ../deployment/mosquitto/data:/mosquitto/data
+      - ../deployment/mosquitto/log:/mosquitto/log
+    restart: unless-stopped
+    networks: [irridea]
+
+volumes:
+  postgres-data:
+  mlflow-artifacts:
+  airflow-logs:
+  grafana-data:
+
+networks:
+  irridea:
+    name: irridea-net
+    external: true

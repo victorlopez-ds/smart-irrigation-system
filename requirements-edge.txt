@@ -1,0 +1,24 @@
+# requirements-edge.txt — Dependencias mínimas para la Raspberry Pi
+# Instalar: pip install -r requirements-edge.txt
+
+# Inferencia ONNX (sin GPU)
+onnxruntime==1.18.1
+
+# Comunicación MQTT
+paho-mqtt==2.1.0
+
+# Datos / DuckDB (sin pandas pesado)
+duckdb==1.0.0
+numpy==1.26.4
+
+# API meteorológica
+requests==2.32.3
+
+# Persistencia de modelos
+joblib==1.4.2
+scikit-learn==1.5.1   # solo para StandardScaler (anomaly detector)
+
+# PyTorch CPU (para actor TorchScript)
+# En ARM64 instalar el wheel oficial:
+# pip install torch==2.3.1 --index-url https://download.pytorch.org/whl/cpu
+torch==2.3.1

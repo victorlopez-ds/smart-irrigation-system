@@ -1,0 +1,16 @@
+# ───────────────────────────────────────────────────────────────────────────
+# Cron jobs del edge.
+#
+# Formato: minuto  hora  diaMes  mes  diaSem  comando
+#
+# Importante: en BusyBox cron, las líneas deben acabar con \n y no usar %
+# ───────────────────────────────────────────────────────────────────────────
+
+# Detección de anomalías cada 15 min (offset 5 min para no chocar con MQTT)
+5,20,35,50 * * * * curl -sS -X POST http://anomaly-api:8001/detect_latest >> /dev/stdout 2>&1
+
+# Riego diario a las 06:00: obs → rl-api → válvula
+0 6 * * * /app/daily_irrigate.sh >> /dev/stdout 2>&1
+
+# (Pendiente: sync_models cada 15 min — se añadirá en el paso 6)
+# */15 * * * * curl -sS -X POST http://sync-agent:8004/run ...

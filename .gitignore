@@ -1,0 +1,64 @@
+# ── Modelos entrenados (binarios pesados — gestionar con MLflow) ───────────────
+models/*.keras
+models/*.h5
+models/*.pkl
+models/*.zip
+models/*.pt
+models/*.onnx
+models/*.npz
+models/*.json
+models/logs_rl/
+!models/.gitkeep
+
+# ── Datos (no se versionan — se generan o descargan) ──────────────────────────
+data/raw/*.json
+data/raw/*.csv
+data/processed/*.csv
+data/stream/
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!data/stream/.gitkeep
+
+# ── Secretos ───────────────────────────────────────────────────────────────────
+.env
+deployment/.env
+!.env.example
+!deployment/.env.example
+
+# ── Python ─────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# ── Airflow ─────────────────────────────────────────────────────────────────────
+airflow.db
+airflow/logs/
+airflow/plugins/__pycache__/
+
+# ── MLflow ─────────────────────────────────────────────────────────────────────
+mlruns/
+mlflow-artifacts/
+
+# ── Docker ─────────────────────────────────────────────────────────────────────
+*.log
+
+# ── Grafana ────────────────────────────────────────────────────────────────────
+deployment/grafana/data/
+
+# ── Mosquitto (datos runtime + credenciales) ──────────────────────────────────
+deployment/mosquitto/data/
+deployment/mosquitto/log/
+deployment/mosquitto/config/passwd
+
+# ── IDE ────────────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+
+# ── Jupyter (si algun notebook se anade) ──────────────────────────────────────
+.ipynb_checkpoints/
+
+# ── OS ─────────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db

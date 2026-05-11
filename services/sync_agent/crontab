@@ -1,0 +1,5 @@
+# Sincroniza modelos desde central cada hora en :07.
+# Se redirige a stdout/stderr del contenedor vía /proc/1/fd.
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+7 * * * * root . /etc/sync_env && python /app/sync.py >> /proc/1/fd/1 2>> /proc/1/fd/2

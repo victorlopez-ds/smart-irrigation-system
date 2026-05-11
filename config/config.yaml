@@ -1,0 +1,116 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# config.yaml — Configuración centralizada del sistema de producción Irridea
+#
+# Todas las rutas son relativas a la raíz de prod/ (este repositorio).
+# Para sobreescribir en contenedores Docker, usar variables de entorno.
+# ──────────────────────────────────────────────────────────────────────────────
+
+# ── Rutas de datos ─────────────────────────────────────────────────────────────
+data:
+  raw_dir:       "data/raw"
+  processed_dir: "data/processed"
+  stream_dir:    "data/stream"
+  db_path:       "data/stream/irridea.duckdb"
+
+  # Ficheros raw (se copian desde el sistema de campo o se descargan)
+  watermeter:    "data/raw/contador_agua_albudeite.json"
+  solenoid:      "data/raw/electrovalvula_albudeite.json"
+  climatology:   "data/raw/climatologia_albudeite.json"
+  soil_moisture: "data/raw/sensor_humedad_albudeite.json"
+  precipitation: "data/raw/precipitaciones_mula.csv"
+
+  # Dataset procesado (generado por data_loader.py o copiado desde el proyecto)
+  daily_dataset: "data/processed/dataset_diario.csv"
+
+# ── Rutas de modelos ───────────────────────────────────────────────────────────
+models:
+  dir:              "models"
+
+  # Modelo de transición (predictor de humedad — MLP)
+  moisture_mlp:     "models/modelo_nn_humedad.keras"
+  scaler_x:         "models/scaler_x.pkl"
+  scaler_y:         "models/scaler_y.pkl"
+
+  # Detector de anomalías
+  anomaly_keras:    "models/anomaly_cnn_lstm.keras"
+  anomaly_onnx:     "models/anomaly_cnn_lstm.onnx"
+  anomaly_scaler:   "models/anomaly_scaler.pkl"
+
+  # Agente RL
+  rl_zip:           "models/best_model.zip"
+  rl_vecnorm:       "models/vecnormalize.pkl"
+  rl_actor:         "models/tqc_actor.pt"
+  rl_vecnorm_stats: "models/vecnorm_stats.npz"
+  rl_log_dir:       "models/logs_rl"
+
+# ── Parámetros del entorno de riego ───────────────────────────────────────────
+irrigation_env:
+  tau_max:        180.0
+  w_max:          2500.0
+  q:              12.57
+  duracion:       90
+  N:              2
+  theta_min:      20.0
+  theta_opt_low:  25.0
+  theta_opt_high: 35.0
+  theta_max:      45.0
+  lambda_agua:    1.5
+
+# ── Parámetros de entrenamiento RL ────────────────────────────────────────────
+rl_training:
+  algorithm:        "TQC"
+  total_timesteps:  300_000
+  seed:             42
+  n_eval_episodes:  20
+
+  algo_kwargs:
+    learning_rate:   0.0001
+    ent_coef:        0.1
+    batch_size:      256
+    learning_starts: 500
+    gamma:           0.99
+    net_arch:        [256, 256]
+
+# ── Parámetros del detector de anomalías ──────────────────────────────────────
+anomaly:
+  window:           30
+  threshold:        0.25
+  epochs:           100
+  batch_size:       128
+  downsample_ratio: 0.1
+
+  model_config:
+    cnn_layers:    [32]
+    lstm_layers:   [64]
+    dropout:       0.1
+    learning_rate: 0.001
+    use_pooling:   false
+
+# ── Parámetros del predictor de humedad (MLP) ─────────────────────────────────
+moisture_mlp:
+  hidden_1:         64
+  dropout:          0.2
+  hidden_2:         32
+  learning_rate:    0.001
+  batch_size:       16
+  epochs:           100
+  validation_split: 0.2
+  test_size:        0.2
+  random_state:     42
+
+# ── MQTT ───────────────────────────────────────────────────────────────────────
+mqtt:
+  broker_host: "localhost"
+  broker_port: 1883
+  topics:
+    flow:      "irridea/flow"
+    valve:     "irridea/valve"
+    soil:      "irridea/soil"
+    valve_cmd: "irridea/valve/cmd"
+    alert:     "irridea/alerts"
+
+# ── Parcela ────────────────────────────────────────────────────────────────────
+site:
+  lat:       38.028
+  lon:       -1.490
+  elevation: 150.0
