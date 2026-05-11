@@ -1,13 +1,13 @@
 # Sistema de riego inteligente
 
-Sistema MLOps de riego inteligente basado en IoT y aprendizaje automatico.
+Sistema MLOps de riego inteligente basado en IoT y aprendizaje automático.
 Desarrollado como Trabajo Fin de Grado en la Universidad de Murcia.
 
 Tres subsistemas ML trabajan en conjunto:
 
-- **Detector de anomalias hidraulicas** (CNN-LSTM, ONNX) — tiempo real cada 15 min
+- **Detector de anomalías hidráulicas** (CNN-LSTM, ONNX) — tiempo real cada 15 min
 - **Predictor de incrementos de humedad** (MLP, ONNX) — componente interno del simulador RL
-- **Agente de riego por refuerzo** (TQC, ONNX) — decision diaria a las 06:00
+- **Agente de riego por refuerzo** (TQC, ONNX) — decisión diaria a las 06:00
 
 ## Arquitectura
 
@@ -22,15 +22,15 @@ SERVIDOR CENTRAL (Docker Compose)
                                   sync-agent (edge)
 EDGE (Raspberry Pi / Docker Compose)
   edge-mqtt-client ──> anomaly-api (ONNX)
-  edge-cron 06:00  ──> rl-api (ONNX) ──> electrovalvula
-  Grafana (:3000)  ──> ingest-svc (metricas)
+  edge-cron 06:00  ──> rl-api (ONNX) ──> electroválvula
+  Grafana (:3000)  ──> ingest-svc (métricas)
 ```
 
 ## Estructura del repositorio
 
 ```
 prod/
-├── src/                        Codigo ML (train, infer, export)
+├── src/                        Código ML (train, infer, export)
 │   ├── anomaly/                  CNN-LSTM anomaly detector
 │   ├── moisture/                 MLP soil moisture predictor
 │   ├── rl/                       TQC irrigation agent + RiegoEnv
@@ -58,7 +58,7 @@ prod/
 │   ├── nginx/                       Reverse proxy + bearer auth
 │   ├── docker/                      Dockerfiles de training
 │   └── .env.example                 Plantilla de variables
-├── config/                     Configuracion centralizada (YAML)
+├── config/                     Configuración centralizada (YAML)
 ├── tests/                      Tests unitarios
 ├── models/                     Artefactos entrenados (gitignored)
 └── data/                       Datos raw + processed (gitignored)
@@ -120,7 +120,7 @@ Servicios edge:
 
 | Servicio | Puerto | Funcion |
 |---|---|---|
-| anomaly-api | 8001 | Deteccion de anomalias (ONNX) |
+| anomaly-api | 8001 | Detección de anomalías (ONNX) |
 | rl-api | 8003 | Agente de riego (ONNX) |
 | edge-mqtt-client | 8010 | Suscriptor MQTT + comando valvula |
 | edge-cron | — | Scheduler: anomaly/15min + riego/06:00 |
@@ -152,27 +152,27 @@ docker compose --env-file deployment/.env \
 
 | Ciclo | Frecuencia | Orquestador | Descripcion |
 |---|---|---|---|
-| Telemetria MQTT | Cada 15 min | mosquitto | Sensores -> ingest-svc -> DuckDB |
-| Deteccion anomalias | Cada 15 min | edge-cron | edge-mqtt-client -> anomaly-api |
-| Agregacion diaria | 23:55 | Airflow | ingest-svc /aggregate |
+| Telemetría MQTT | Cada 15 min | mosquitto | Sensores -> ingest-svc -> DuckDB |
+| Deteccion anomalías | Cada 15 min | edge-cron | edge-mqtt-client -> anomaly-api |
+| Agregación diaria | 23:55 | Airflow | ingest-svc /aggregate |
 | Forecast AEMET | 23:55 | Airflow | ingest-svc /weather/fetch (Hargreaves ET0) |
 | Riego RL | 06:00 | edge-cron | /rl/obs -> /act -> /valve/command |
 | Sync modelos | Cada hora | sync-agent | nginx-central -> models-edge volume |
-| Retrain anomaly | Dia 1 mensual | Airflow | Champion-challenger + MLflow |
-| Retrain moisture | Dia 1 mensual | Airflow | Champion-challenger + MLflow |
-| Finetune RL | Dia 1 trimestral | Airflow | Online RL con transiciones reales |
+| Retrain anomaly | Día 1 mensual | Airflow | Champion-challenger + MLflow |
+| Retrain moisture | Día 1 mensual | Airflow | Champion-challenger + MLflow |
+| Finetune RL | Día 1 trimestral | Airflow | Online RL con transiciones reales |
 
 ## Monitorizacion (Grafana)
 
-Grafana se provisiona automaticamente con el dashboard
+Grafana se provisiona automáticamente con el dashboard
 en http://localhost:3000 (credenciales: admin / irridea).
 
 Paneles:
-- **Caudal y anomalias** — linea de vol_diff + puntos rojos en anomalias
+- **Caudal y anomalías** — línea de vol_diff + puntos rojos en anomalías
 - **Humedad del suelo** — serie temporal (%)
-- **ET0 y precipitacion** — barras AEMET con Hargreaves
-- **Riego RL** — accion diaria tau (minutos)
-- **Historico diario** — theta vs agua consumida
+- **ET0 y precipitación** — barras AEMET con Hargreaves
+- **Riego RL** — acción diaria tau (minutos)
+- **Histórico diario** — theta vs agua consumida
 
 Los datos se consultan via la API REST de ingest-svc (endpoints `/grafana/*`)
 usando el plugin Infinity como datasource.
@@ -186,10 +186,10 @@ pytest tests/ -v
 
 ## Seguridad
 
-- Las credenciales se gestionan via `.env` (gitignored)
-- El broker MQTT requiere autenticacion (user/password)
+- Las credenciales se gestionan vía `.env` (gitignored)
+- El broker MQTT requiere autenticación (user/password)
 - La descarga de modelos usa bearer token via nginx reverse proxy
-- Las APIs internas no estan expuestas al exterior (solo via red Docker)
+- Las APIs internas no estan expuestas al exterior (solo vía red Docker)
 
 ## Licencia
 
