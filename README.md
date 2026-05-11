@@ -174,7 +174,7 @@ Paneles:
 - **Riego RL** — acción diaria tau (minutos)
 - **Histórico diario** — theta vs agua consumida
 
-Los datos se consultan via la API REST de ingest-svc (endpoints `/grafana/*`)
+Los datos se consultan vía la API REST de ingest-svc (endpoints `/grafana/*`)
 usando el plugin Infinity como datasource.
 
 ## Tests
