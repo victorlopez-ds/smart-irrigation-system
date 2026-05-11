@@ -82,7 +82,7 @@ cp deployment/.env.example deployment/.env
 
 Variables criticas a rellenar:
 
-| Variable | Descripcion |
+| Variable | Descripción |
 |---|---|
 | `POSTGRES_PASSWORD` | Password de PostgreSQL (Airflow + MLflow) |
 | `MQTT_USER` / `MQTT_PASS` | Credenciales del broker MQTT |
@@ -118,7 +118,7 @@ docker compose --env-file deployment/.env \
 
 Servicios edge:
 
-| Servicio | Puerto | Funcion |
+| Servicio | Puerto | Función |
 |---|---|---|
 | anomaly-api | 8001 | Detección de anomalías (ONNX) |
 | rl-api | 8003 | Agente de riego (ONNX) |
@@ -150,10 +150,10 @@ docker compose --env-file deployment/.env \
 
 ## Ciclos operacionales
 
-| Ciclo | Frecuencia | Orquestador | Descripcion |
+| Ciclo | Frecuencia | Orquestador | Descripción |
 |---|---|---|---|
 | Telemetría MQTT | Cada 15 min | mosquitto | Sensores -> ingest-svc -> DuckDB |
-| Deteccion anomalías | Cada 15 min | edge-cron | edge-mqtt-client -> anomaly-api |
+| Detección anomalías | Cada 15 min | edge-cron | edge-mqtt-client -> anomaly-api |
 | Agregación diaria | 23:55 | Airflow | ingest-svc /aggregate |
 | Forecast AEMET | 23:55 | Airflow | ingest-svc /weather/fetch (Hargreaves ET0) |
 | Riego RL | 06:00 | edge-cron | /rl/obs -> /act -> /valve/command |
@@ -162,7 +162,7 @@ docker compose --env-file deployment/.env \
 | Retrain moisture | Día 1 mensual | Airflow | Champion-challenger + MLflow |
 | Finetune RL | Día 1 trimestral | Airflow | Online RL con transiciones reales |
 
-## Monitorizacion (Grafana)
+## Monitorización (Grafana)
 
 Grafana se provisiona automáticamente con el dashboard
 en http://localhost:3000 (credenciales: admin / irridea).
@@ -190,7 +190,3 @@ pytest tests/ -v
 - El broker MQTT requiere autenticación (user/password)
 - La descarga de modelos usa bearer token via nginx reverse proxy
 - Las APIs internas no estan expuestas al exterior (solo vía red Docker)
-
-## Licencia
-
-Proyecto académico — Universidad de Murcia, 2025-2026.
