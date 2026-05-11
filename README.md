@@ -1,4 +1,4 @@
-# Irridea — Sistema de riego inteligente
+# Sistema de riego inteligente
 
 Sistema MLOps de riego inteligente basado en IoT y aprendizaje automatico.
 Desarrollado como Trabajo Fin de Grado en la Universidad de Murcia.
@@ -164,7 +164,7 @@ docker compose --env-file deployment/.env \
 
 ## Monitorizacion (Grafana)
 
-Grafana se provisiona automaticamente con el dashboard **Irridea - Smart Irrigation**
+Grafana se provisiona automaticamente con el dashboard
 en http://localhost:3000 (credenciales: admin / irridea).
 
 Paneles:
@@ -193,4 +193,4 @@ pytest tests/ -v
 
 ## Licencia
 
-Proyecto academico — Universidad de Murcia, 2025-2026.
+Proyecto académico — Universidad de Murcia, 2025-2026.
