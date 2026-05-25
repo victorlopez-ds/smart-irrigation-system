@@ -141,9 +141,8 @@ services:
       MQTT_BROKER_PORT: 1883
       MQTT_USER: ${MQTT_USER}
       MQTT_PASS: ${MQTT_PASS}
-      MQTT_TOPIC_FLOW:  ${MQTT_TOPIC_FLOW:-irridea/flow}
-      MQTT_TOPIC_VALVE: ${MQTT_TOPIC_VALVE:-irridea/valve}
-      MQTT_TOPIC_SOIL:  ${MQTT_TOPIC_SOIL:-irridea/soil}
+      WICLOUDS_APIKEY:  ${WICLOUDS_APIKEY:-odins}
+      WICLOUDS_SERIAL:  ${WICLOUDS_SERIAL}
       DATA_DIR: /app/data
       BUFFER_DAYS_RAW:   ${BUFFER_DAYS_RAW:-30}
       BUFFER_DAYS_DAILY: ${BUFFER_DAYS_DAILY:-90}
@@ -210,7 +209,7 @@ services:
 
   # ── Grafana (monitorización IoT + ML) ────────────────────────────────────────
   grafana:
-    image: grafana/grafana-oss:11.1.0
+    image: grafana/grafana-oss:11.5.2
     container_name: grafana
     environment:
       GF_SECURITY_ADMIN_USER: admin

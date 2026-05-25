@@ -7,23 +7,27 @@
   "links": [],
   "panels": [
     {
-      "title": "Caudal y anomalias",
+      "title": "Caudal y detección de anomalías",
+      "description": "Diferencia de volumen cada 15 min. Puntos rojos = anomalía detectada por CNN-LSTM.",
       "type": "timeseries",
-      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 0 },
+      "gridPos": { "h": 10, "w": 12, "x": 0, "y": 0 },
       "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "PEE501B349C4204AD" },
       "fieldConfig": {
         "defaults": {
           "unit": "litre",
-          "custom": { "lineWidth": 2, "fillOpacity": 10 }
+          "custom": { "lineWidth": 2, "fillOpacity": 10, "spanNulls": true }
         },
         "overrides": [
           {
             "matcher": { "id": "byName", "options": "vol_diff" },
             "properties": [
-              { "id": "color", "value": { "mode": "fixed", "fixedColor": "green" } },
+              { "id": "color", "value": { "mode": "fixed", "fixedColor": "blue" } },
               { "id": "custom.drawStyle", "value": "line" },
-              { "id": "custom.lineWidth", "value": 2 },
-              { "id": "custom.fillOpacity", "value": 10 }
+              { "id": "custom.pointSize", "value": 5 },
+              { "id": "custom.showPoints", "value": "auto" },
+              { "id": "custom.lineWidth", "value": 1 },
+              { "id": "custom.fillOpacity", "value": 15 },
+              { "id": "displayName", "value": "Caudal (Δ litros)" }
             ]
           },
           {
@@ -31,10 +35,10 @@
             "properties": [
               { "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } },
               { "id": "custom.drawStyle", "value": "points" },
-              { "id": "custom.pointSize", "value": 10 },
+              { "id": "custom.pointSize", "value": 12 },
               { "id": "custom.lineWidth", "value": 0 },
               { "id": "custom.fillOpacity", "value": 0 },
-              { "id": "displayName", "value": "Anomalia" }
+              { "id": "displayName", "value": "Anomalía" }
             ]
           }
         ]
@@ -44,7 +48,7 @@
           "refId": "A",
           "type": "json",
           "source": "url",
-          "url": "http://ingest-svc:8000/grafana/flow?n=200",
+          "url": "http://ingest-svc:8000/grafana/flow?n=500",
           "format": "table",
           "root_selector": "",
           "url_options": { "method": "GET", "params": [], "headers": [], "body_type": "", "data": "" },
@@ -57,7 +61,7 @@
           "refId": "B",
           "type": "json",
           "source": "url",
-          "url": "http://ingest-svc:8000/grafana/alerts?n=50",
+          "url": "http://ingest-svc:8000/grafana/alerts?n=100",
           "format": "table",
           "root_selector": "",
           "url_options": { "method": "GET", "params": [], "headers": [], "body_type": "", "data": "" },
@@ -69,16 +73,115 @@
       ]
     },
     {
-      "title": "Humedad del suelo (%)",
+      "title": "Minutos de riego diarios",
+      "description": "Decisión del agente RL (TQC): τ minutos de riego por día.",
       "type": "timeseries",
-      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 0 },
+      "gridPos": { "h": 10, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "PEE501B349C4204AD" },
+      "options": {
+        "legend": { "displayMode": "hidden" },
+        "tooltip": { "mode": "single" }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed", "fixedColor": "blue" },
+          "custom": {
+            "drawStyle": "bars",
+            "barAlignment": 0,
+            "fillOpacity": 40,
+            "lineWidth": 1,
+            "pointSize": 5,
+            "showPoints": "always"
+          },
+          "unit": "min",
+          "min": 0,
+          "max": 180
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "type": "json",
+          "source": "url",
+          "url": "http://ingest-svc:8000/grafana/rl?n=30",
+          "format": "table",
+          "root_selector": "",
+          "url_options": { "method": "GET", "params": [], "headers": [], "body_type": "", "data": "" },
+          "columns": [
+            { "selector": "ts", "text": "Time", "type": "timestamp" },
+            { "selector": "tau_minutes", "text": "Riego (min)", "type": "number" }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Anomalías detectadas esta semana",
+      "description": "Número total de anomalías hidráulicas detectadas en los últimos 7 días.",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 10 },
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "PEE501B349C4204AD" },
+      "options": {
+        "reduceOptions": {
+          "calcs": ["count"],
+          "fields": "/^actual_l$/",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center",
+        "orientation": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "orange", "value": 3 },
+              { "color": "red", "value": 5 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "type": "json",
+          "source": "url",
+          "url": "http://ingest-svc:8000/grafana/alerts?n=500",
+          "format": "table",
+          "root_selector": "",
+          "url_options": { "method": "GET", "params": [], "headers": [], "body_type": "", "data": "" },
+          "columns": [
+            { "selector": "ts", "text": "Time", "type": "timestamp" },
+            { "selector": "actual_l", "text": "actual_l", "type": "number" }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Evolución de la humedad del suelo",
+      "description": "Humedad volumétrica del suelo (%) cada 15 min.",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 18, "x": 6, "y": 10 },
       "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "PEE501B349C4204AD" },
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "fixed", "fixedColor": "green" },
-          "custom": { "lineWidth": 2, "fillOpacity": 15 },
+          "color": { "mode": "fixed", "fixedColor": "blue" },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "gradientMode": "scheme",
+            "lineInterpolation": "smooth"
+          },
           "unit": "percent",
-          "min": 0, "max": 100
+          "min": 0,
+          "max": 60
         },
         "overrides": []
       },
@@ -87,126 +190,13 @@
           "refId": "A",
           "type": "json",
           "source": "url",
-          "url": "http://ingest-svc:8000/grafana/soil?n=200",
+          "url": "http://ingest-svc:8000/grafana/soil?n=500",
           "format": "table",
           "root_selector": "",
           "url_options": { "method": "GET", "params": [], "headers": [], "body_type": "", "data": "" },
           "columns": [
             { "selector": "ts", "text": "Time", "type": "timestamp" },
-            { "selector": "soil_moisture", "text": "Humedad", "type": "number" }
-          ]
-        }
-      ]
-    },
-    {
-      "title": "ET0 y Precipitacion (AEMET Hargreaves)",
-      "type": "barchart",
-      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 9 },
-      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "PEE501B349C4204AD" },
-      "fieldConfig": {
-        "defaults": { "unit": "mm" },
-        "overrides": [
-          {
-            "matcher": { "id": "byName", "options": "et0_mm" },
-            "properties": [
-              { "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }
-            ]
-          },
-          {
-            "matcher": { "id": "byName", "options": "precip_mm" },
-            "properties": [
-              { "id": "color", "value": { "mode": "fixed", "fixedColor": "blue" } }
-            ]
-          }
-        ]
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "type": "json",
-          "source": "url",
-          "url": "http://ingest-svc:8000/grafana/weather",
-          "format": "table",
-          "root_selector": "",
-          "url_options": { "method": "GET", "params": [], "headers": [], "body_type": "", "data": "" },
-          "columns": [
-            { "selector": "date", "text": "Fecha", "type": "string" },
-            { "selector": "et0_mm", "text": "et0_mm", "type": "number" },
-            { "selector": "precip_mm", "text": "precip_mm", "type": "number" }
-          ]
-        }
-      ]
-    },
-    {
-      "title": "Riego diario - Accion RL (tau min)",
-      "type": "timeseries",
-      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 9 },
-      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "PEE501B349C4204AD" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "fixed", "fixedColor": "purple" },
-          "custom": { "lineWidth": 2, "drawStyle": "bars", "fillOpacity": 30 },
-          "unit": "m",
-          "min": 0, "max": 180
-        },
-        "overrides": []
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "type": "json",
-          "source": "url",
-          "url": "http://ingest-svc:8000/grafana/rl?n=90",
-          "format": "table",
-          "root_selector": "",
-          "url_options": { "method": "GET", "params": [], "headers": [], "body_type": "", "data": "" },
-          "columns": [
-            { "selector": "ts", "text": "Time", "type": "timestamp" },
-            { "selector": "tau_minutes", "text": "tau_minutes", "type": "number" }
-          ]
-        }
-      ]
-    },
-    {
-      "title": "Historico diario (theta vs agua)",
-      "type": "timeseries",
-      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 18 },
-      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "PEE501B349C4204AD" },
-      "fieldConfig": {
-        "defaults": {
-          "custom": { "lineWidth": 2 }
-        },
-        "overrides": [
-          {
-            "matcher": { "id": "byName", "options": "theta" },
-            "properties": [
-              { "id": "color", "value": { "mode": "fixed", "fixedColor": "green" } },
-              { "id": "unit", "value": "percent" }
-            ]
-          },
-          {
-            "matcher": { "id": "byName", "options": "water_used_l" },
-            "properties": [
-              { "id": "color", "value": { "mode": "fixed", "fixedColor": "blue" } },
-              { "id": "unit", "value": "litre" },
-              { "id": "custom.axisPlacement", "value": "right" }
-            ]
-          }
-        ]
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "type": "json",
-          "source": "url",
-          "url": "http://ingest-svc:8000/grafana/daily?n=90",
-          "format": "table",
-          "root_selector": "",
-          "url_options": { "method": "GET", "params": [], "headers": [], "body_type": "", "data": "" },
-          "columns": [
-            { "selector": "date", "text": "Time", "type": "timestamp" },
-            { "selector": "theta", "text": "theta", "type": "number" },
-            { "selector": "water_used_l", "text": "water_used_l", "type": "number" }
+            { "selector": "soil_moisture", "text": "Humedad (%)", "type": "number" }
           ]
         }
       ]
@@ -215,10 +205,10 @@
   "schemaVersion": 39,
   "tags": ["irridea", "iot", "mlops"],
   "templating": { "list": [] },
-  "time": { "from": "now-7d", "to": "now" },
+  "time": { "from": "now-2d", "to": "now" },
   "timepicker": {},
   "timezone": "browser",
   "title": "Irridea - Smart Irrigation",
   "uid": "irridea-main",
-  "version": 4
+  "version": 6
 }

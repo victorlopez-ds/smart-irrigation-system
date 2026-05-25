@@ -20,7 +20,8 @@ Variables de entorno:
   MQTT_BROKER_HOST       host del broker (central, autenticado)
   MQTT_BROKER_PORT       puerto (default 1883)
   MQTT_USER, MQTT_PASS   credenciales (opcionales)
-  MQTT_TOPIC_FLOW/VALVE/SOIL  tópicos a suscribir
+  WICLOUDS_APIKEY        API key ODINS (default: odins)
+  WICLOUDS_TOPIC         topic wildcard (default: /{APIKEY}/+/attrs)
   DATA_DIR               directorio de la BD (default /app/data)
   BUFFER_DAYS_RAW        días a retener en raw_*  (default 30)
   BUFFER_DAYS_DAILY      días a retener en features_daily (default 90)
@@ -57,9 +58,18 @@ BROKER_PORT = int(os.getenv("MQTT_BROKER_PORT", "1883"))
 MQTT_USER   = os.getenv("MQTT_USER")
 MQTT_PASS   = os.getenv("MQTT_PASS")
 
-TOPIC_FLOW  = os.getenv("MQTT_TOPIC_FLOW",  "irridea/flow")
-TOPIC_VALVE = os.getenv("MQTT_TOPIC_VALVE", "irridea/valve")
-TOPIC_SOIL  = os.getenv("MQTT_TOPIC_SOIL",  "irridea/soil")
+# ── Protocolo MQTT (formato wiclouds ODINS) ──────────────────────────────────
+# Topic: /{APIKEY}/{SERIAL}/attrs
+# Entrada: {"cnt24": 1234.56, "ev40": 1, ...}  (cnt* → flow, ev* → valve)
+# Salida:  {"anomaly_alert": 1, "tau_minutes": 120, "hist": [...]}
+WICLOUDS_APIKEY = os.getenv("WICLOUDS_APIKEY", "odins")
+WICLOUDS_TOPIC  = os.getenv("WICLOUDS_TOPIC", f"/{WICLOUDS_APIKEY}/+/attrs")
+
+# Mapeo de atributos por regex (configurable por dispositivo)
+# cnt* → flow (volumen acumulado), ev* → valve (0/1)
+import re
+RE_CNT = re.compile(r"^cnt", re.IGNORECASE)
+RE_EV  = re.compile(r"^ev",  re.IGNORECASE)
 
 DATA_DIR = Path(os.getenv("DATA_DIR", "/app/data"))
 DB_PATH  = DATA_DIR / "irridea.duckdb"
@@ -110,7 +120,7 @@ class Database:
                 )""")
             self._con.execute("""
                 CREATE TABLE IF NOT EXISTS anomaly_alerts (
-                    ts TIMESTAMP, error DOUBLE, threshold DOUBLE,
+                    ts TIMESTAMPTZ, error DOUBLE, threshold DOUBLE,
                     predicted_l DOUBLE, actual_l DOUBLE
                 )""")
             # ── Weather forecast (AEMET) ───────────────────────────────────
@@ -209,35 +219,69 @@ def handle_soil(payload: dict) -> None:
                 float(payload.get("temperature", 0))])
 
 
-HANDLERS = {
-    TOPIC_FLOW:  handle_flow,
-    TOPIC_VALVE: handle_valve,
-    TOPIC_SOIL:  handle_soil,
-}
+# Referencia al cliente MQTT (se asigna en start_mqtt)
+_mqtt_client: mqtt.Client | None = None
+
+
+def _serial_from_topic(topic: str) -> str | None:
+    """Extrae el SERIAL de un topic /{APIKEY}/{SERIAL}/attrs."""
+    parts = topic.strip("/").split("/")
+    return parts[1] if len(parts) >= 3 else None
+
+
+def _wiclouds_topic(serial: str) -> str:
+    """Construye el topic de publicación para un dispositivo."""
+    return f"/{WICLOUDS_APIKEY}/{serial}/attrs"
 
 
 def on_connect(client, userdata, flags, rc, properties=None):
     if rc == 0:
         log.info("Conectado a MQTT %s:%s", BROKER_HOST, BROKER_PORT)
-        for topic in HANDLERS:
-            client.subscribe(topic, qos=1)
-            log.info("Suscrito a %s", topic)
+        client.subscribe(WICLOUDS_TOPIC, qos=1)
+        log.info("Suscrito a %s", WICLOUDS_TOPIC)
     else:
         log.error("Conexión MQTT fallida (rc=%s)", rc)
 
 
 def on_message(client, userdata, msg):
+    """
+    Procesa mensajes wiclouds: /{APIKEY}/{SERIAL}/attrs
+    Payload: {"cnt24": 1234.56, "ev40": 1, ...}
+    Ignora atributos publicados por nosotros (_source=irridea).
+    """
     try:
         payload = json.loads(msg.payload.decode("utf-8"))
-        handler = HANDLERS.get(msg.topic)
-        if handler:
-            handler(payload)
-            log.info("Mensaje %s persistido", msg.topic)
+
+        # Ignorar mensajes que nosotros mismos publicamos
+        if payload.get("_source") == "irridea":
+            return
+
+        serial = _serial_from_topic(msg.topic)
+        if not serial:
+            return
+
+        now = dt.datetime.now(dt.timezone.utc)
+
+        for key, value in payload.items():
+            if key in ("hist", "_source"):
+                continue
+
+            if RE_CNT.match(key):
+                vol = float(value)
+                handle_flow({"vol": vol, "TimeInstant": now.isoformat()})
+                log.info("[%s] %s=%.2f → raw_flow", serial, key, vol)
+
+            elif RE_EV.match(key):
+                status = int(value)
+                handle_valve({"status": status, "TimeInstant": now.isoformat()})
+                log.info("[%s] %s=%d → raw_valve", serial, key, status)
+
     except Exception:
         log.exception("Error procesando mensaje [%s]", msg.topic)
 
 
 def start_mqtt() -> mqtt.Client:
+    global _mqtt_client
     client = mqtt.Client(
         mqtt.CallbackAPIVersion.VERSION2,
         client_id=f"ingest-svc-{os.getpid()}",
@@ -249,6 +293,7 @@ def start_mqtt() -> mqtt.Client:
     client.on_message = on_message
     client.connect_async(BROKER_HOST, BROKER_PORT, keepalive=60)
     client.loop_start()  # hilo daemon
+    _mqtt_client = client
     return client
 
 
@@ -671,14 +716,19 @@ def weather_fetch():
 
 @app.get("/grafana/flow")
 def grafana_flow():
-    """Últimas N lecturas de caudal (vol_diff) como serie temporal."""
+    """Últimas N lecturas de caudal con vol_diff calculado al vuelo."""
     n = int(request.args.get("n", 100))
     rows = db.execute(
-        "SELECT ts, vol_l, vol_diff FROM raw_flow ORDER BY ts DESC LIMIT ?", [n]
+        "SELECT ts, vol_l, "
+        "  vol_l - LAG(vol_l) OVER (ORDER BY ts) AS vol_diff "
+        "FROM (SELECT ts, vol_l FROM raw_flow ORDER BY ts DESC LIMIT ?) "
+        "ORDER BY ts",
+        [n + 1],
     ).fetchall()
+    # Skip first row (vol_diff is NULL for it)
     return jsonify([
         {"ts": r[0].isoformat() if r[0] else None, "vol_l": r[1], "vol_diff": r[2]}
-        for r in reversed(rows)
+        for r in rows if r[2] is not None
     ])
 
 
@@ -745,7 +795,9 @@ def grafana_rl():
         "ORDER BY ts DESC LIMIT ?", [n]
     ).fetchall()
     return jsonify([
-        {"ts": r[0].isoformat() if r[0] else None, "tau_minutes": r[1], "device_id": r[2]}
+        {"ts": r[0].isoformat() if r[0] else None,
+         "date": str(r[0])[:10] if r[0] else None,
+         "tau_minutes": r[1], "device_id": r[2]}
         for r in reversed(rows)
     ])
 

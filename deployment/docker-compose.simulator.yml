@@ -1,0 +1,41 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# docker-compose.simulator.yml — Simulador de sensores IoT (test / demo)
+#
+# Emula caudalímetro, sensor de humedad y electroválvula publicando en MQTT
+# cada 15 min (configurable con SIM_INTERVAL_S).
+#
+# NO forma parte de central ni de edge: es una herramienta independiente
+# que se conecta a la red irridea-net donde corre Mosquitto.
+#
+# Uso:
+#   docker compose --env-file deployment/.env \
+#       -f deployment/docker-compose.simulator.yml up -d --build
+# ──────────────────────────────────────────────────────────────────────────────
+
+version: "3.9"
+
+services:
+  sensor-simulator:
+    build:
+      context: ..
+      dockerfile: services/sensor_simulator/Dockerfile
+    container_name: sensor-simulator
+    environment:
+      MQTT_BROKER_HOST: mosquitto
+      MQTT_BROKER_PORT: 1883
+      MQTT_USER: ${MQTT_USER}
+      MQTT_PASS: ${MQTT_PASS}
+      WICLOUDS_APIKEY:  ${WICLOUDS_APIKEY:-odins}
+      WICLOUDS_SERIAL:  ${WICLOUDS_SERIAL:-IA0301G00000000004}
+      SIM_INTERVAL_S: ${SIM_INTERVAL_S:-900}
+      SIM_ANOMALY_PROB: ${SIM_ANOMALY_PROB:-0.02}
+      SIM_INITIAL_MOISTURE: ${SIM_INITIAL_MOISTURE:-25.0}
+      SIM_Q_LH: ${SIM_Q_LH:-12.57}
+      SIM_ET0_MM_DAY: ${SIM_ET0_MM_DAY:-5.0}
+    restart: unless-stopped
+    networks: [irridea]
+
+networks:
+  irridea:
+    name: irridea-net
+    external: true

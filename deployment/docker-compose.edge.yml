@@ -35,9 +35,8 @@ services:
       MQTT_BROKER_PORT: 1883
       MQTT_USER: ${MQTT_USER}
       MQTT_PASS: ${MQTT_PASS}
-      MQTT_TOPIC_FLOW:  ${MQTT_TOPIC_FLOW:-irridea/flow}
-      MQTT_TOPIC_SOIL:  ${MQTT_TOPIC_SOIL:-irridea/soil}
-      MQTT_TOPIC_VALVE: ${MQTT_TOPIC_VALVE:-irridea/valve}
+      WICLOUDS_APIKEY:  ${WICLOUDS_APIKEY:-odins}
+      WICLOUDS_SERIAL:  ${WICLOUDS_SERIAL}
       ANOMALY_API_URL:  http://anomaly-api:8001
       INGEST_URL:       http://ingest-svc:8000
       ANOMALY_WINDOW:   ${ANOMALY_WINDOW:-30}
@@ -66,7 +65,8 @@ services:
       MQTT_BROKER_PORT: 1883
       MQTT_USER: ${MQTT_USER}
       MQTT_PASS: ${MQTT_PASS}
-      MQTT_TOPIC_ALERTS: ${MQTT_TOPIC_ALERTS:-irridea/alerts}
+      WICLOUDS_APIKEY:  ${WICLOUDS_APIKEY:-odins}
+      WICLOUDS_SERIAL:  ${WICLOUDS_SERIAL}
     ports:
       - "8001:8001"
     volumes:

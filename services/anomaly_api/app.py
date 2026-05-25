@@ -55,7 +55,10 @@ MQTT_HOST   = os.getenv("MQTT_BROKER_HOST", "mosquitto")
 MQTT_PORT   = int(os.getenv("MQTT_BROKER_PORT", "1883"))
 MQTT_USER   = os.getenv("MQTT_USER")
 MQTT_PASS   = os.getenv("MQTT_PASS")
-TOPIC_ALERT = os.getenv("MQTT_TOPIC_ALERTS", "irridea/alerts")
+
+# ── Protocolo wiclouds ODINS ─────────────────────────────────────────────────
+WICLOUDS_APIKEY = os.getenv("WICLOUDS_APIKEY", "odins")
+WICLOUDS_SERIAL = os.getenv("WICLOUDS_SERIAL", "")
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -124,9 +127,24 @@ _mqtt_client.loop_start()
 
 
 def publish_alert(payload: dict) -> None:
-    info = _mqtt_client.publish(TOPIC_ALERT, json.dumps(payload), qos=1)
+    """Publica una alerta en formato wiclouds al topic del dispositivo."""
+    import time as _time
+    now_ts = int(_time.time())
+    wiclouds_payload = {
+        "anomaly_alert": 1,
+        "anomaly_error": round(float(payload.get("error", 0)), 4),
+        "hist": [
+            {"n": "anomaly_alert", "t": now_ts, "v": 1},
+            {"n": "anomaly_error", "t": now_ts, "v": round(float(payload.get("error", 0)), 4)},
+        ],
+        "_source": "irridea",
+    }
+    topic = f"/{WICLOUDS_APIKEY}/{WICLOUDS_SERIAL}/attrs"
+    info = _mqtt_client.publish(topic, json.dumps(wiclouds_payload), qos=1)
     if info.rc != mqtt.MQTT_ERR_SUCCESS:
         log.warning("Fallo publicando alerta MQTT (rc=%s)", info.rc)
+    else:
+        log.info("Alerta publicada en %s", topic)
 
 
 # ──────────────────────────────────────────────────────────────────────────────
