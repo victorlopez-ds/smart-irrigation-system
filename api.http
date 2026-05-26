@@ -1,0 +1,101 @@
+### contador 1
+
+curl 'https://riego.mimurcia.murcia.es/backend/controller/62b5ae654b36644a08d464ac/device/62b5ae654b366462ced45f0c/historical?from=%222026-05-18T11:20:27.995Z%22&to=%222026-05-25T11:20:27.995Z%22&type=%22undefined%22' \
+  -H 'Accept: */*' \
+  -H 'Accept-Language: es-ES,es;q=0.9' \
+  -H 'Application: WiCloudS' \
+  -H 'Cache-Control: no-cache' \
+  -H 'Connection: keep-alive' \
+  -b 'connect.sid=s%3ARQDtwnKP_JBlRkDO93xa-ok1pPLLwkXr.nT2kBupI0y3ek53TxS8EyI1ga1DtaA%2F7rSfJofXeHug' \
+  -H 'Pragma: no-cache' \
+  -H 'Referer: https://riego.mimurcia.murcia.es/' \
+  -H 'Sec-Fetch-Dest: empty' \
+  -H 'Sec-Fetch-Mode: cors' \
+  -H 'Sec-Fetch-Site: same-origin' \
+  -H 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36' \
+  -H 'sec-ch-ua: "Chromium";v="148", "Google Chrome";v="148", "Not/A)Brand";v="99"' \
+  -H 'sec-ch-ua-mobile: ?0' \
+  -H 'sec-ch-ua-platform: "Windows"' \
+  -H 'x-access-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhMTQzNWZmZDVhNDlhNjFlNjRmMjkwMSIsImFwaVRva2VuIjp0cnVlLCJpYXQiOjE3Nzk3MDk1ODl9.EpOpwRmz4OTI12hBwGWxXGFITPyyN4_oGy-11xXa5rk'
+
+
+### humedad del suelo 
+
+curl 'https://riego.mimurcia.murcia.es/backend/controller/64ccb0f4bb7b241ff2f8a41f/device/64ccb0f4bb7b241561f8a415/historical?from=%222026-04-25T00:56:49.000Z%22&to=%222026-05-25T21:59:59.999Z%22&type=%22undefined%22' \
+  -H 'Accept: */*' \
+  -H 'Accept-Language: es-ES,es;q=0.9' \
+  -H 'Application: WiCloudS' \
+  -H 'Cache-Control: no-cache' \
+  -H 'Connection: keep-alive' \
+  -b 'connect.sid=s%3AFYhpSDAFxySc-QOKEMCajvWf8rmrPR-O.8EyRQtRvEOPObiiYY5pGsodcfOFv1HxbiFMWV4ouedo' \
+  -H 'Pragma: no-cache' \
+  -H 'Referer: https://riego.mimurcia.murcia.es/' \
+  -H 'Sec-Fetch-Dest: empty' \
+  -H 'Sec-Fetch-Mode: cors' \
+  -H 'Sec-Fetch-Site: same-origin' \
+  -H 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36' \
+  -H 'sec-ch-ua: "Chromium";v="148", "Google Chrome";v="148", "Not/A)Brand";v="99"' \
+  -H 'sec-ch-ua-mobile: ?0' \
+  -H 'sec-ch-ua-platform: "Windows"' \
+  -H 'x-access-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhMTQzNWZmZDVhNDlhNjFlNjRmMjkwMSIsImFwaVRva2VuIjp0cnVlLCJpYXQiOjE3Nzk3MDk1ODl9.EpOpwRmz4OTI12hBwGWxXGFITPyyN4_oGy-11xXa5rk'
+
+### apertura válvulas
+
+curl 'https://riego.mimurcia.murcia.es/backend/controller/62b5ae654b36644a08d464ac/device/62b5ae654b3664dfcbd46021/historical?from=%222026-04-25T00:56:49.000Z%22&to=%222026-05-25T21:59:59.999Z%22&type=%22undefined%22' \
+  -H 'Accept: */*' \
+  -H 'Accept-Language: es-ES,es;q=0.9' \
+  -H 'Application: WiCloudS' \
+  -H 'Cache-Control: no-cache' \
+  -H 'Connection: keep-alive' \
+  -b 'connect.sid=s%3AFYhpSDAFxySc-QOKEMCajvWf8rmrPR-O.8EyRQtRvEOPObiiYY5pGsodcfOFv1HxbiFMWV4ouedo' \
+  -H 'Pragma: no-cache' \
+  -H 'Referer: https://riego.mimurcia.murcia.es/' \
+  -H 'Sec-Fetch-Dest: empty' \
+  -H 'Sec-Fetch-Mode: cors' \
+  -H 'Sec-Fetch-Site: same-origin' \
+  -H 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36' \
+  -H 'sec-ch-ua: "Chromium";v="148", "Google Chrome";v="148", "Not/A)Brand";v="99"' \
+  -H 'sec-ch-ua-mobile: ?0' \
+  -H 'sec-ch-ua-platform: "Windows"' \
+  -H 'x-access-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhMTQzNWZmZDVhNDlhNjFlNjRmMjkwMSIsImFwaVRva2VuIjp0cnVlLCJpYXQiOjE3Nzk3MDk1ODl9.EpOpwRmz4OTI12hBwGWxXGFITPyyN4_oGy-11xXa5rk'
+
+
+### riegos
+curl 'https://riego.mimurcia.murcia.es/backend/controller/62b5ae654b36644a08d464ac/irrideahistorical?from=%222026-05-24T11:36:28.526Z%22&to=%222026-05-25T11:36:28.526Z%22' \
+  -H 'Accept: */*' \
+  -H 'Accept-Language: es-ES,es;q=0.9' \
+  -H 'Application: WiCloudS' \
+  -H 'Cache-Control: no-cache' \
+  -H 'Connection: keep-alive' \
+  -b 'connect.sid=s%3AHb4rdmCEvhHZvAAiwraGOyFkgAWOSQmf.%2BBhVb4TbNHgacHT7h3xTM6P3XmZ%2BEd7RYYwl3%2ByNHck' \
+  -H 'Pragma: no-cache' \
+  -H 'Referer: https://riego.mimurcia.murcia.es/' \
+  -H 'Sec-Fetch-Dest: empty' \
+  -H 'Sec-Fetch-Mode: cors' \
+  -H 'Sec-Fetch-Site: same-origin' \
+  -H 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36' \
+  -H 'sec-ch-ua: "Chromium";v="148", "Google Chrome";v="148", "Not/A)Brand";v="99"' \
+  -H 'sec-ch-ua-mobile: ?0' \
+  -H 'sec-ch-ua-platform: "Windows"' \
+  -H 'x-access-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhMTQzNWZmZDVhNDlhNjFlNjRmMjkwMSIsImFwaVRva2VuIjp0cnVlLCJpYXQiOjE3Nzk3MDk1ODl9.EpOpwRmz4OTI12hBwGWxXGFITPyyN4_oGy-11xXa5rk'
+
+###
+curl 'https://pagead2.googlesyndication.com/pagead/gen_204?id=av-js&type=reach&proto=CAIgATpVbW9kZWxfcGVyc29uX2NvdW50cnlfY29kZV9FU19wZXJzb25fcmVnaW9uX2NvZGVfNDM2MTczNzQ2OTZjNjUyZDRjNjE0ZDYxNmU2MzY4NjEuanNvbkjIAVIaQ09yQWdmV3cxSlFERmY1VUhRa2QzeEU5bFFaJwikFRCQmKgEGL2vPSDgxbIEKAIwAjgBXc3MTD%2FqAQgIZBhkIGQoUA%3D%3D' \
+  -H 'accept: */*' \
+  -H 'accept-language: es-ES,es;q=0.9,en;q=0.8' \
+  -H 'cache-control: no-cache' \
+  -H 'pragma: no-cache' \
+  -H 'priority: u=1, i' \
+  -H 'referer: https://www.googleadservices.com/' \
+  -H 'sec-ch-ua: "Chromium";v="148", "Google Chrome";v="148", "Not/A)Brand";v="99"' \
+  -H 'sec-ch-ua-mobile: ?0' \
+  -H 'sec-ch-ua-platform: "Windows"' \
+  -H 'sec-fetch-dest: empty' \
+  -H 'sec-fetch-mode: no-cors' \
+  -H 'sec-fetch-site: cross-site' \
+  -H 'user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36' \
+  -H 'x-browser-channel: stable' \
+  -H 'x-browser-copyright: Copyright 2026 Google LLC. All Rights Reserved.' \
+  -H 'x-browser-validation: puPtlXuojC+VILE1bgaJ40YGt+E=' \
+  -H 'x-browser-year: 2026' \
+  -H 'x-client-data: CKmdygEIk6HLAQiFoM0B'

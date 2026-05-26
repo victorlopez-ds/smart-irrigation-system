@@ -262,19 +262,36 @@ def on_message(client, userdata, msg):
 
         now = dt.datetime.now(dt.timezone.utc)
 
+        # Extraer timestamp real del hist (si existe) para usar la fecha
+        # del dato original en vez de la fecha de recepción.
+        hist = payload.get("hist", [])
+        hist_ts_map: dict[str, str] = {}
+        for h in hist:
+            if "n" in h and "t" in h:
+                ts_dt = dt.datetime.fromtimestamp(h["t"], tz=dt.timezone.utc)
+                hist_ts_map[h["n"]] = ts_dt.isoformat()
+
         for key, value in payload.items():
             if key in ("hist", "_source"):
                 continue
 
+            ts_iso = hist_ts_map.get(key, now.isoformat())
+
             if RE_CNT.match(key):
                 vol = float(value)
-                handle_flow({"vol": vol, "TimeInstant": now.isoformat()})
+                handle_flow({"vol": vol, "TimeInstant": ts_iso})
                 log.info("[%s] %s=%.2f → raw_flow", serial, key, vol)
 
             elif RE_EV.match(key):
                 status = int(value)
-                handle_valve({"status": status, "TimeInstant": now.isoformat()})
+                handle_valve({"status": status, "TimeInstant": ts_iso})
                 log.info("[%s] %s=%d → raw_valve", serial, key, status)
+
+            elif key == "soil_moisture":
+                moisture = float(value)
+                handle_soil({"soilMoisture": moisture, "temperature": 0,
+                             "TimeInstant": ts_iso})
+                log.info("[%s] %s=%.2f → raw_soil", serial, key, moisture)
 
     except Exception:
         log.exception("Error procesando mensaje [%s]", msg.topic)

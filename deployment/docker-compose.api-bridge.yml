@@ -1,0 +1,44 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# docker-compose.api-bridge.yml — Bridge API REST wiclouds → MQTT
+#
+# Sustituye al sensor-simulator en producción. Consulta la API REST de
+# wiclouds cada 15 min y publica los datos nuevos al broker MQTT en
+# formato ODINS.
+#
+# NO forma parte de central ni de edge: es una herramienta independiente
+# que se conecta a la red irridea-net donde corre Mosquitto.
+#
+# Uso:
+#   docker compose --env-file deployment/.env \
+#       -f deployment/docker-compose.api-bridge.yml up -d --build
+# ──────────────────────────────────────────────────────────────────────────────
+
+version: "3.9"
+
+services:
+  api-bridge:
+    build:
+      context: ..
+      dockerfile: services/api_bridge/Dockerfile
+    container_name: api-bridge
+    environment:
+      MQTT_BROKER_HOST: mosquitto
+      MQTT_BROKER_PORT: 1883
+      MQTT_USER: ${MQTT_USER}
+      MQTT_PASS: ${MQTT_PASS}
+      WICLOUDS_APIKEY:    ${WICLOUDS_APIKEY:-odins}
+      WICLOUDS_SERIAL:    ${WICLOUDS_SERIAL:-IA0301G00000000004}
+      WICLOUDS_API_BASE:  ${WICLOUDS_API_BASE:-https://riego.mimurcia.murcia.es/backend}
+      WICLOUDS_API_TOKEN: ${WICLOUDS_API_TOKEN}
+      WICLOUDS_CTRL_FLOW: ${WICLOUDS_CTRL_FLOW:-62b5ae654b36644a08d464ac}
+      WICLOUDS_DEV_FLOW:  ${WICLOUDS_DEV_FLOW:-62b5ae654b366462ced45f0c}
+      WICLOUDS_CTRL_SOIL: ${WICLOUDS_CTRL_SOIL:-64ccb0f4bb7b241ff2f8a41f}
+      WICLOUDS_DEV_SOIL:  ${WICLOUDS_DEV_SOIL:-64ccb0f4bb7b241561f8a415}
+      POLL_INTERVAL_S:    ${POLL_INTERVAL_S:-900}
+    restart: unless-stopped
+    networks: [irridea]
+
+networks:
+  irridea:
+    name: irridea-net
+    external: true
